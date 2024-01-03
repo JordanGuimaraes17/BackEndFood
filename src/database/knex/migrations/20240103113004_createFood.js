@@ -6,13 +6,7 @@ exports.up = knex =>
       table.timestamp('created_at').defaultTo(knex.fn.now())
       table.timestamp('updated_at').defaultTo(knex.fn.now())
     })
-    .createTable('ingredients', table => {
-      table.increments('id')
-      table.text('title')
-      table.text('description')
-      table.timestamp('created_at').defaultTo(knex.fn.now())
-      table.timestamp('updated_at').defaultTo(knex.fn.now())
-    })
+
     .createTable('dishes', table => {
       table.increments('id')
       table.string('name')

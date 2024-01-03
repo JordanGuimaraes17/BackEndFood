@@ -5,28 +5,32 @@ const sqliteConnection = require('../database/sqlite')
 class UsersController {
   async create(request, response) {
     const { name, email, password } = request.body
-    const dataBase = await sqliteConnection()
+    const dataBase = await sqliteConnection() // conecta a api
     const checkUsersExist = await dataBase.get(
-      'SELECT * FROM users WHERE email =(?)',
+      // get busca informções
+      'SELECT * FROM users WHERE email =(?)', // SELECT seleciona a  coluna da tabela
       [email]
     )
     if (checkUsersExist) {
       throw new AppError('Este e-email já está em uso.')
     }
-    const hashedPassword = await hash(password, 8)
+    const hashedPassword = await hash(password, 8) // adiciona a criptografia na senha
 
     await dataBase.run(
-      'INSERT INTO users (name, email,password) VALUES (?,?,?)',
-      [name, email, hashedPassword]
+      // run executa o comando sql
+      'INSERT INTO users (name, email,password) VALUES (?,?,?)', // INSERT INTO onde cai inserir na tabela
+      [name, email, hashedPassword] // hashedPassword era o password, agora com criptografia
     )
     return response.status(201).json()
   }
+
   async update(request, response) {
     const { name, email, password, old_password } = request.body
     const user_id = request.user.id
     const database = await sqliteConnection()
     const user = await database.get('SELECT * FROM users WHERE id =(?)', [
-      user_id
+      // get busca informções
+      user_id // SELECT seleciona a  coluna id
     ])
     if (!user) {
       throw new AppError('Usuário não econtrado')
@@ -38,8 +42,11 @@ class UsersController {
     if (userWithUpdatedEmail && userWithUpdatedEmail.id !== user.id) {
       throw new AppError('Este e-mail já está em uso.')
     }
+
     user.name = name ?? user.name
     user.email = email ?? user.email
+    // se existir conteudo em name o primeiro é utilizado,se não o segundo continua o que ja estava
+    // isso é usado para quando atualizar senha sem  colocar name e email ou por algum motivo name e email não chegue
 
     if (password) {
       if (!old_password) {
@@ -48,7 +55,7 @@ class UsersController {
         )
       }
 
-      const checkOldPassword = await compare(old_password, user.password)
+      const checkOldPassword = await compare(old_password, user.password) // compare é do bcryptjs compara as senhas
 
       if (!checkOldPassword) {
         throw new AppError('A senha antiga não confere.')
@@ -62,13 +69,14 @@ class UsersController {
     }
 
     await database.run(
-      `UPDATE users SET
+      // run executa o comando sql
+      `UPDATE users SET 
       name = ?,
       email = ?,
       password = ?,
       updated_at = DATETIME('now')
-      WHERE id = ?`,
-      [user.name, user.email, user.password, user_id]
+      WHERE id = ?`, // UPDATE  atualiza a tabela
+      [user.name, user.email, user.password, user_id] // dados inseridos na atualaização
     )
     return response.json()
   }

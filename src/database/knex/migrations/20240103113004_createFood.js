@@ -23,6 +23,7 @@ exports.up = knex =>
     .createTable('orders', table => {
       table.increments('id')
       table.integer('user_id').unsigned()
+      table.foreign('user_id').references('id').inTable('users')
       table.integer('total_quantity').defaultTo(0)
       table.decimal('total_price', 10, 2).defaultTo(0)
       table.timestamp('created_at').defaultTo(knex.fn.now())
@@ -41,11 +42,11 @@ exports.up = knex =>
     .createTable('ratings', table => {
       table.increments('id')
       table.integer('user_id').unsigned()
+      table.foreign('user_id').references('id').inTable('users')
       table.integer('dish_id').unsigned()
+      table.foreign('dish_id').references('id').inTable('dishes')
       table.integer('rating')
       table.text('comment')
-      table.foreign('user_id').references('id').inTable('users')
-      table.foreign('dish_id').references('id').inTable('dishes')
       table.timestamp('created_at').defaultTo(knex.fn.now())
     })
 

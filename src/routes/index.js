@@ -1,17 +1,18 @@
 const { Router } = require('express')
 
 const usersRouter = require('./users.routes')
-const categoriesRoutes = require('./categorie.routes')
-const dishesRoutes = require('./dishes.routes')
-const ordersRoutes = require('./orders.routes')
-const ordersDishesRoutes = require('./OrdersDishes.routes')
+const categoriesRouter = require('./categorie.routes')
+const dishesRouter = require('./dishes.routes')
+const ordersRouter = require('./orders.routes')
+const ratingRouter = require('./rating.routes')
+const ordersDishesRouter = require('./OrdersDishes.routes')
 
 const routes = Router()
-
+routes.use('/rating', ratingRouter)
 routes.use('/users', usersRouter)
-routes.use('/categories', categoriesRoutes)
-routes.use('/dishes', dishesRoutes)
-routes.use('/orders', ordersRoutes)
-routes.use('/order-dishes', ordersDishesRoutes)
+routes.use('/categories', categoriesRouter)
+routes.use('/dishes', dishesRouter)
+routes.use('/orders', ordersRouter)
+routes.use('/order-dishes', ordersDishesRouter)
 
 module.exports = routes

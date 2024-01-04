@@ -11,6 +11,7 @@ exports.up = knex =>
       table.increments('id').primary()
       table.string('name').notNullable()
       table.text('description').notNullable()
+      table.text('ingredients').notNullable()
       table.decimal('price').notNullable()
       table.string('avatar').nullable()
       table

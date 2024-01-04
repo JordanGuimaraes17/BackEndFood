@@ -41,6 +41,58 @@ class RatingsController {
       return response.status(500).json({ error: 'Erro ao criar a avaliação.' })
     }
   }
+
+  async read(request, response) {
+    try {
+      const { id } = request.params
+      const database = await sqliteConnection()
+
+      // Busca a avaliação pelo ID na tabela 'ratings'
+      const rating = await database.get('SELECT * FROM ratings WHERE id = ?', [
+        id
+      ])
+
+      if (!rating) {
+        throw new AppError('Avaliação não encontrada.')
+      }
+
+      return response.json(rating)
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({ error: 'Erro ao obter a avaliação.' })
+    }
+  }
+
+  async update(request, response) {
+    try {
+      const { id } = request.params
+      const { rating, comment } = request.body
+      const database = await sqliteConnection()
+
+      // Verifica se a avaliação existe
+      const existingRating = await database.get(
+        'SELECT * FROM ratings WHERE id = ?',
+        [id]
+      )
+
+      if (!existingRating) {
+        throw new AppError('Avaliação não encontrada.')
+      }
+
+      // Atualiza a avaliação na tabela 'ratings'
+      await database.run(
+        'UPDATE ratings SET rating = ?, comment = ? WHERE id = ?',
+        [rating, comment, id]
+      )
+
+      return response.json({ message: 'Avaliação atualizada com sucesso.' })
+    } catch (error) {
+      console.error(error)
+      return response
+        .status(500)
+        .json({ error: 'Erro ao atualizar a avaliação.' })
+    }
+  }
 }
 
 module.exports = RatingsController

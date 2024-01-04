@@ -36,7 +36,6 @@ class OrdersController {
 
       return response.status(201).json({ order_id: lastID })
     } catch (error) {
-      console.error(error)
       return response.status(500).json({ error: 'Erro ao criar o pedido.' })
     }
   }
@@ -62,8 +61,64 @@ class OrdersController {
 
       return response.json(formattedOrders)
     } catch (error) {
-      console.error(error)
       return response.status(500).json({ error: 'Erro ao listar os pedidos.' })
+    }
+  }
+
+  async getOrderDetails(request, response) {
+    try {
+      const { order_id } = request.params
+      const database = await sqliteConnection()
+
+      // Obtenha detalhes específicos do pedido
+      const orderDetails = await database.get(
+        'SELECT * FROM orders WHERE id = ?',
+        [order_id]
+      )
+
+      if (!orderDetails) {
+        throw new AppError('Detalhes do pedido não encontrados.')
+      }
+
+      // Obtenha a lista de pratos no pedido
+      const orderDishes = await database.all(
+        'SELECT d.id, d.name, d.description, d.price, od.quantity FROM order_dishes od JOIN dishes d ON od.dish_id = d.id WHERE od.order_id = ?',
+        [order_id]
+      )
+
+      orderDetails.dishes = orderDishes
+
+      return response.json(orderDetails)
+    } catch (error) {
+      return response
+        .status(500)
+        .json({ error: 'Erro ao obter detalhes do pedido.' })
+    }
+  }
+
+  async removeOrder(request, response) {
+    try {
+      const { order_id } = request.params
+      const database = await sqliteConnection()
+
+      // Verifique se o pedido existe
+      const order = await database.get('SELECT * FROM orders WHERE id = ?', [
+        order_id
+      ])
+
+      if (!order) {
+        throw new AppError('Pedido não encontrado.')
+      }
+
+      // Remova o pedido e pratos associados
+      await database.run('DELETE FROM orders WHERE id = ?', [order_id])
+      await database.run('DELETE FROM order_dishes WHERE order_id = ?', [
+        order_id
+      ])
+
+      return response.json({ message: 'Pedido removido com sucesso.' })
+    } catch (error) {
+      return response.status(500).json({ error: 'Erro ao remover o pedido.' })
     }
   }
 }

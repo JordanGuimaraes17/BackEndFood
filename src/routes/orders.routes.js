@@ -4,6 +4,7 @@ const ordersRoutes = Router()
 const ordersController = new OrdersController()
 
 ordersRoutes.post('/', ordersController.create)
-ordersRoutes.get('/list-order/:order_id', ordersController.list)
+ordersRoutes.get('/:order_id', ordersController.getOrderDetails)
+ordersRoutes.delete('/:order_id', ordersController.removeOrder)
 
 module.exports = ordersRoutes

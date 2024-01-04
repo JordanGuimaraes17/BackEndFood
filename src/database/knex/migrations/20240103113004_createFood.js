@@ -1,53 +1,50 @@
 exports.up = knex =>
   knex.schema
     .createTable('categories', table => {
-      table.increments('id')
-      table.string('name')
+      table.increments('id').primary()
+      table.string('name').notNullable()
       table.string('avatar').nullable()
-      table.timestamp('created_at').defaultTo(knex.fn.now())
-      table.timestamp('updated_at').defaultTo(knex.fn.now())
+      table.timestamps(true, true)
     })
 
     .createTable('dishes', table => {
-      table.increments('id')
-      table.string('name')
-      table.text('description')
-      table.decimal('price')
+      table.increments('id').primary()
+      table.string('name').notNullable()
+      table.text('description').notNullable()
+      table.decimal('price').notNullable()
       table.string('avatar').nullable()
-      table.integer('category_id').unsigned()
-      table.foreign('category_id').references('id').inTable('categories')
-      table.timestamp('created_at').defaultTo(knex.fn.now())
-      table.timestamp('updated_at').defaultTo(knex.fn.now())
+      table
+        .integer('category_id')
+        .unsigned()
+        .references('id')
+        .inTable('categories')
+      table.timestamps(true, true)
     })
 
     .createTable('orders', table => {
-      table.increments('id')
-      table.integer('user_id').unsigned()
-      table.foreign('user_id').references('id').inTable('users')
-      table.integer('total_quantity').defaultTo(0)
+      table.increments('id').primary()
+      table.integer('user_id').unsigned().references('id').inTable('users')
       table.decimal('total_price', 10, 2).defaultTo(0)
-      table.timestamp('created_at').defaultTo(knex.fn.now())
+      table.integer('total_quantity').defaultTo(0)
+      table.timestamps(true, true)
     })
 
     .createTable('order_dishes', table => {
-      table.increments('id')
-      table.integer('order_id').unsigned()
-      table.integer('dish_id').unsigned()
+      table.increments('id').primary()
+      table.integer('order_id').unsigned().references('id').inTable('orders')
+      table.integer('dish_id').unsigned().references('id').inTable('dishes')
       table.integer('quantity').defaultTo(1)
       table.decimal('dish_price', 10, 2).defaultTo(0)
-      table.foreign('order_id').references('id').inTable('orders')
-      table.foreign('dish_id').references('id').inTable('dishes')
+      table.timestamps(true, true)
     })
 
     .createTable('ratings', table => {
-      table.increments('id')
-      table.integer('user_id').unsigned()
-      table.foreign('user_id').references('id').inTable('users')
-      table.integer('dish_id').unsigned()
-      table.foreign('dish_id').references('id').inTable('dishes')
+      table.increments('id').primary()
+      table.integer('user_id').unsigned().references('id').inTable('users')
+      table.integer('dish_id').unsigned().references('id').inTable('dishes')
       table.integer('rating')
       table.text('comment')
-      table.timestamp('created_at').defaultTo(knex.fn.now())
+      table.timestamps(true, true)
     })
 
 exports.down = knex =>

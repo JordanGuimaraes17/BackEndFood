@@ -3,6 +3,8 @@ const { Router } = require('express')
 const OrderDishesController = require('../controllers/OrderDishesController')
 const orderDishesRoutes = Router()
 const orderDishesController = new OrderDishesController()
+const ensuAuthenticated = require('../middlewares/ensuAuthenticated')
+orderDishesRoutes.use(ensuAuthenticated)
 
 orderDishesRoutes.post('/', orderDishesController.addDishesToOrder)
 orderDishesRoutes.get(

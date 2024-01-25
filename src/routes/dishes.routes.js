@@ -16,6 +16,10 @@ dishesRoutes.post('/', dishesController.create)
 dishesRoutes.put('/:id', dishesController.update)
 dishesRoutes.get('/', dishesController.index)
 dishesRoutes.delete('/:id', dishesController.delete)
-dishesRoutes.patch('/avatar', upload.single('avatar'), avatarController.update)
+dishesRoutes.patch(
+  '/avatar/:id',
+  upload.single('avatar'),
+  avatarController.update
+)
 
 module.exports = dishesRoutes

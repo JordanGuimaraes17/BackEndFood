@@ -54,6 +54,7 @@ class CategoriesController {
       .status(200)
       .json({ message: 'Categoria atualizada com sucesso.' })
   }
+
   async index(request, response) {
     const dataBase = await sqliteConnection() // Conecta ao banco de dados
 

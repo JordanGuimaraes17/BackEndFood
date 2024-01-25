@@ -44,6 +44,7 @@ class DishesController {
 
     return response.status(201).json(createdDishes)
   }
+
   async update(request, response) {
     const { id } = request.params
     const { name, description, price, ingredients, category_id } = request.body
@@ -73,6 +74,7 @@ class DishesController {
       .status(200)
       .json({ message: 'Prato atualizado com sucesso.' })
   }
+
   async delete(request, response) {
     const { id } = request.params
     const dataBase = await sqliteConnection() // Conecta ao banco de dados
@@ -89,6 +91,7 @@ class DishesController {
     await dataBase.run('DELETE FROM dishes WHERE id = ?', [id])
     return response.status(200).json({ message: 'Prato excluído com sucesso.' })
   }
+
   async index(request, response) {
     const dataBase = await sqliteConnection() // Conecta ao banco de dados
 

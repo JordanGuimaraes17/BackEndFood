@@ -25,17 +25,10 @@ exports.up = knex =>
     .createTable('orders', table => {
       table.increments('id').primary()
       table.integer('user_id').unsigned().references('id').inTable('users')
-      table.decimal('total_price', 10, 2).defaultTo(0)
-      table.integer('total_quantity').defaultTo(0)
-      table.timestamps(true, true)
-    })
-
-    .createTable('order_dishes', table => {
-      table.increments('id').primary()
-      table.integer('order_id').unsigned().references('id').inTable('orders')
       table.integer('dish_id').unsigned().references('id').inTable('dishes')
       table.integer('quantity').defaultTo(1)
       table.decimal('dish_price', 10, 2).defaultTo(0)
+      table.decimal('total_price', 10, 2).defaultTo(0)
       table.timestamps(true, true)
     })
 

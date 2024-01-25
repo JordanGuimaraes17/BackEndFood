@@ -6,8 +6,8 @@ const ensuAuthenticated = require('../middlewares/ensuAuthenticated')
 
 ordersRoutes.use(ensuAuthenticated)
 
-ordersRoutes.post('/', ordersController.create)
-ordersRoutes.get('/:order_id', ordersController.getOrderDetails)
+ordersRoutes.post('/', ordersController.addDishToOrder)
 ordersRoutes.delete('/:order_id', ordersController.removeOrder)
+ordersRoutes.get('/', ordersController.viewOrder)
 
 module.exports = ordersRoutes

@@ -92,11 +92,29 @@ class DishesController {
     return response.status(200).json({ message: 'Prato excluído com sucesso.' })
   }
 
-  async index(request, response) {
+  async show(request, response) {
+    const { id } = request.params
     const dataBase = await sqliteConnection() // Conecta ao banco de dados
 
-    // Lista todos os pratos
+    // Busca o prato com o ID fornecido
+    const dish = await dataBase.get('SELECT * FROM dishes WHERE id = ?', [id])
+
+    if (!dish) {
+      throw new AppError('Prato não encontrado.')
+    }
+
+    return response.status(200).json(dish)
+  }
+
+  async showAll(request, response) {
+    const dataBase = await sqliteConnection() // Conecta ao banco de dados
+
+    // Busca todos os pratos na tabela 'dishes'
     const dishes = await dataBase.all('SELECT * FROM dishes')
+
+    if (dishes.length === 0) {
+      throw new AppError('Nenhum prato encontrado.')
+    }
 
     return response.status(200).json(dishes)
   }

@@ -3,120 +3,144 @@ const sqliteConnection = require('../database/sqlite')
 
 class DishesController {
   async create(request, response) {
-    const dishesList = request.body // Agora, espera-se uma lista de pratos
+    try {
+      const dishesList = request.body
+      const dataBase = await sqliteConnection()
 
-    const dataBase = await sqliteConnection() // Conecta ao banco de dados
+      const createdDishes = []
 
-    const createdDishes = []
+      for (const dish of dishesList) {
+        const { name, description, price, ingredients, category_id } = dish
 
-    // Itera sobre cada prato na lista
-    for (const dish of dishesList) {
-      const { name, description, price, ingredients, category_id } = dish
+        const checkNameExist = await dataBase.get(
+          'SELECT * FROM dishes WHERE name = ?',
+          [name]
+        )
 
-      // Verifica se o prato já existe pelo nome
-      const checkNameExist = await dataBase.get(
-        'SELECT * FROM dishes WHERE name = ?',
-        [name]
-      )
+        if (checkNameExist) {
+          throw new AppError('Este prato já foi registrado anteriormente.', 400)
+        }
 
-      if (checkNameExist) {
-        throw new AppError('Este prato já foi registrado anteriormente.')
+        const checkCategoryExist = await dataBase.get(
+          'SELECT * FROM categories WHERE id = ?',
+          [category_id]
+        )
+
+        if (!checkCategoryExist) {
+          throw new AppError('ID de categoria inválido.', 400)
+        }
+
+        const { lastID } = await dataBase.run(
+          'INSERT INTO dishes (name, description, price, ingredients, category_id) VALUES (?,?,?,?,?)',
+          [name, description, price, ingredients, category_id]
+        )
+
+        createdDishes.push({ id: lastID, ...dish })
       }
 
-      // Verifica se o ID da categoria fornecido existe na tabela categories
+      return response.status(201).json(createdDishes)
+    } catch (error) {
+      return response
+        .status(error.statusCode || 500)
+        .json({ error: error.message })
+    }
+  }
+
+  async update(request, response) {
+    try {
+      const { id } = request.params
+      const { name, description, price, ingredients, category_id } =
+        request.body
+      const dataBase = await sqliteConnection()
+
+      const checkDishExist = await dataBase.get(
+        'SELECT * FROM dishes WHERE id = ?',
+        [id]
+      )
+
+      if (!checkDishExist) {
+        throw new AppError('Prato não encontrado.', 404)
+      }
+
       const checkCategoryExist = await dataBase.get(
         'SELECT * FROM categories WHERE id = ?',
         [category_id]
       )
 
       if (!checkCategoryExist) {
-        throw new AppError('ID de categoria inválido.')
+        throw new AppError('ID de categoria inválido.', 400)
       }
 
-      // Insere o prato na tabela 'dishes' com o ID da categoria fornecido
-      const { lastID } = await dataBase.run(
-        'INSERT INTO dishes (name, description, price, ingredients, category_id) VALUES (?,?,?,?,?)',
-        [name, description, price, ingredients, category_id]
+      await dataBase.run(
+        'UPDATE dishes SET name=?, description=?, ingredients=?, price=?, category_id=? WHERE id=?',
+        [name, description, ingredients, price, category_id, id]
       )
 
-      createdDishes.push({ id: lastID })
+      return response
+        .status(200)
+        .json({ message: 'Prato atualizado com sucesso.' })
+    } catch (error) {
+      return response
+        .status(error.statusCode || 500)
+        .json({ error: error.message })
     }
-
-    return response.status(201).json(createdDishes)
-  }
-
-  async update(request, response) {
-    const { id } = request.params
-    const { name, description, price, ingredients, category_id } = request.body
-    const dataBase = await sqliteConnection() // Conecta ao banco de dados
-    // Verifica se o prato com o ID fornecido existe
-    const checkDishExist = await dataBase.get(
-      'SELECT * FROM dishes WHERE id = ?',
-      [id]
-    )
-    if (!checkDishExist) {
-      throw new AppError('Prato não encontrado.')
-    }
-    // Verifica se o ID da categoria fornecido existe na tabela categories
-    const checkCategoryExist = await dataBase.get(
-      'SELECT * FROM categories WHERE id = ?',
-      [category_id]
-    )
-    if (!checkCategoryExist) {
-      throw new AppError('ID de categoria inválido.')
-    }
-    // Atualiza o prato na tabela 'dishes' com o ID fornecido
-    await dataBase.run(
-      'UPDATE dishes SET name=?, description=?, ingredients=?, price=?, category_id=? WHERE id=?',
-      [name, description, ingredients, price, category_id, id]
-    )
-    return response
-      .status(200)
-      .json({ message: 'Prato atualizado com sucesso.' })
   }
 
   async delete(request, response) {
-    const { id } = request.params
-    const dataBase = await sqliteConnection() // Conecta ao banco de dados
+    try {
+      const { id } = request.params
+      const dataBase = await sqliteConnection()
 
-    // Verifica se o prato com o ID fornecido existe
-    const checkDishExist = await dataBase.get(
-      'SELECT * FROM dishes WHERE id = ?',
-      [id]
-    )
-    if (!checkDishExist) {
-      throw new AppError('Prato não encontrado.')
+      const checkDishExist = await dataBase.get(
+        'SELECT * FROM dishes WHERE id = ?',
+        [id]
+      )
+
+      if (!checkDishExist) {
+        throw new AppError('Prato não encontrado.', 404)
+      }
+
+      await dataBase.run('DELETE FROM dishes WHERE id = ?', [id])
+
+      return response
+        .status(200)
+        .json({ message: 'Prato excluído com sucesso.' })
+    } catch (error) {
+      return response
+        .status(error.statusCode || 500)
+        .json({ error: error.message })
     }
-    // Remove o prato da tabela 'dishes' com o ID fornecido
-    await dataBase.run('DELETE FROM dishes WHERE id = ?', [id])
-    return response.status(200).json({ message: 'Prato excluído com sucesso.' })
   }
 
   async show(request, response) {
-    const { id } = request.params
-    const dataBase = await sqliteConnection() // Conecta ao banco de dados
+    try {
+      const { id } = request.params
+      const dataBase = await sqliteConnection()
 
-    // Busca o prato com o ID fornecido
-    const dish = await dataBase.get('SELECT * FROM dishes WHERE id = ?', [id])
+      if (id) {
+        const dish = await dataBase.get('SELECT * FROM dishes WHERE id = ?', [
+          id
+        ])
 
-    if (!dish) {
-      throw new AppError('Prato não encontrado.')
+        if (!dish) {
+          throw new AppError('Prato não encontrado.', 404)
+        }
+
+        return response.status(200).json(dish)
+      } else {
+        const dishes = await dataBase.all('SELECT * FROM dishes')
+
+        if (dishes.length === 0) {
+          throw new AppError('Nenhum prato encontrado.', 404)
+        }
+
+        return response.status(200).json(dishes)
+      }
+    } catch (error) {
+      return response
+        .status(error.statusCode || 500)
+        .json({ error: error.message })
     }
-
-    return response.status(200).json(dish)
-  }
-
-  async showAll(request, response) {
-    const dataBase = await sqliteConnection() // Conecta ao banco de dados
-
-    // Busca todos os pratos na tabela 'dishes'
-    const dishes = await dataBase.all('SELECT * FROM dishes')
-
-    if (dishes.length === 0) {
-      throw new AppError('Nenhum prato encontrado.')
-    }
-
-    return response.status(200).json(dishes)
   }
 }
 

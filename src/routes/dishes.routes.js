@@ -9,13 +9,11 @@ const multer = require('multer')
 const upload = multer(uploadConfig.MULTER)
 const avatarController = new AvatarController()
 const dishesController = new DishesController()
-
 dishesRoutes.use(ensuAuthenticated)
 
 dishesRoutes.post('/', dishesController.create)
 dishesRoutes.put('/:id', dishesController.update)
-dishesRoutes.get('/:id', dishesController.show)
-dishesRoutes.get('/', dishesController.showAll)
+dishesRoutes.get('/:id?', dishesController.show)
 dishesRoutes.delete('/:id', dishesController.delete)
 dishesRoutes.patch(
   '/avatar/:id',

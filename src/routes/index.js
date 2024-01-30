@@ -12,7 +12,7 @@ const routes = Router()
 routes.use('/sessions', sessionsRouter)
 routes.use('/rating', ratingRouter)
 routes.use('/users', usersRouter)
-routes.use('/categories', categoriesRouter)
+routes.use('/category', categoriesRouter)
 routes.use('/dishes', dishesRouter)
 routes.use('/orders', ordersRouter)
 

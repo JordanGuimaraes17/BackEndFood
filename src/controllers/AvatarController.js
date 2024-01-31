@@ -9,23 +9,23 @@ class AvatarController {
 
     const diskStorage = new DiskStorage()
 
-    const dishe = await knex('dishes').where('id', id).first()
+    const dish = await knex('dishes').where('id', id).first()
 
-    if (!dishe) {
+    if (!dish) {
       throw new AppError('Prato não encontrado', 404)
     }
 
-    if (dishe.avatar) {
-      await diskStorage.deleFile(dishe.avatar)
+    if (dish.avatar) {
+      await diskStorage.deleFile(dish.avatar)
     }
 
     const newAvatarFilename = await diskStorage.saveFile(avatarFilename)
-    dishe.avatar = newAvatarFilename
+    dish.avatar = newAvatarFilename
 
     // Atualizar o avatar no banco de dados
     await knex('dishes').where('id', id).update({ avatar: newAvatarFilename })
 
-    return response.json(dishe)
+    return response.json(dish)
   }
 }
 

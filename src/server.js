@@ -1,17 +1,20 @@
+const express = require('express')
+const cors = require('cors')
 require('express-async-errors')
 const migrationsRun = require('./database/sqlite/migrations')
 const AppError = require('./utils/AppError')
-const cors = require('cors')
-
-const express = require('express')
 const routes = require('./routes')
-migrationsRun()
 
 const app = express()
+const uploadConfig = require('./configs/upload')
+migrationsRun()
+
 app.use(cors())
 app.use(express.json()) // receber informações do body
 
 app.use(routes)
+app.use('/files', express.static(uploadConfig.UPLOADS_FOLDER))
+migrationsRun()
 app.use((error, request, response, next) => {
   if (error instanceof AppError) {
     return response.status(error.statusCode).json({

@@ -7,13 +7,22 @@ class DishesController {
     try {
       const { name, description, ingredients, price, category_id } =
         request.body
+
+      const existingDish = await knex('dishes').where({ name }).first()
+      if (existingDish) {
+        return response
+          .status(400)
+          .json({ message: 'Já existe um prato com esse nome.' })
+      }
+
       if (!request.file || !request.file.filename) {
         throw new AppError('Por favor, selecione uma imagem para o prato.', 400)
       }
+
       const avatarFileName = request.file.filename
       const diskStorage = new DiskStorage()
       const filename = await diskStorage.saveFile(avatarFileName)
-      const dish_id = await knex('dishes').insert({
+      const [dish_id] = await knex('dishes').insert({
         name,
         description,
         ingredients,
@@ -24,7 +33,7 @@ class DishesController {
 
       return response.status(201).json({ dish_id })
     } catch (error) {
-      console.error('Error creating dish:', error) // Adiciona este log para capturar mais informações sobre o erro
+      console.error('Error creating dish:', error)
       return response
         .status(error.statusCode || 500)
         .json({ error: error.message })

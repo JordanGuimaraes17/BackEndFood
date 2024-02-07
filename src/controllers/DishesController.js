@@ -1,45 +1,30 @@
 const AppError = require('../utils/AppError')
-const sqliteConnection = require('../database/sqlite')
+const DiskStorage = require('../providers/DiskStorage')
+const knex = require('../database/knex')
 
 class DishesController {
   async create(request, response) {
     try {
-      const dishesList = request.body
-      const dataBase = await sqliteConnection()
-
-      const createdDishes = []
-
-      for (const dish of dishesList) {
-        const { name, description, price, ingredients, category_id } = dish
-
-        const checkNameExist = await dataBase.get(
-          'SELECT * FROM dishes WHERE name = ?',
-          [name]
-        )
-
-        if (checkNameExist) {
-          throw new AppError('Este prato já foi registrado anteriormente.', 400)
-        }
-
-        const checkCategoryExist = await dataBase.get(
-          'SELECT * FROM categories WHERE id = ?',
-          [category_id]
-        )
-
-        if (!checkCategoryExist) {
-          throw new AppError('ID de categoria inválido.', 400)
-        }
-
-        const { lastID } = await dataBase.run(
-          'INSERT INTO dishes (name, description, price, ingredients, category_id) VALUES (?,?,?,?,?)',
-          [name, description, price, ingredients, category_id]
-        )
-
-        createdDishes.push({ id: lastID, ...dish })
+      const { name, description, ingredients, price, category_id } =
+        request.body
+      if (!request.file || !request.file.filename) {
+        throw new AppError('Por favor, selecione uma imagem para o prato.', 400)
       }
+      const avatarFileName = request.file.filename
+      const diskStorage = new DiskStorage()
+      const filename = await diskStorage.saveFile(avatarFileName)
+      const dish_id = await knex('dishes').insert({
+        name,
+        description,
+        ingredients,
+        price,
+        avatar: filename,
+        category_id
+      })
 
-      return response.status(201).json(createdDishes)
+      return response.status(201).json({ dish_id })
     } catch (error) {
+      console.error('Error creating dish:', error) // Adiciona este log para capturar mais informações sobre o erro
       return response
         .status(error.statusCode || 500)
         .json({ error: error.message })
@@ -49,32 +34,14 @@ class DishesController {
   async update(request, response) {
     try {
       const { id } = request.params
+
       const { name, description, price, ingredients, category_id } =
         request.body
-      const dataBase = await sqliteConnection()
 
-      const checkDishExist = await dataBase.get(
-        'SELECT * FROM dishes WHERE id = ?',
-        [id]
-      )
-
-      if (!checkDishExist) {
-        throw new AppError('Prato não encontrado.', 404)
-      }
-
-      const checkCategoryExist = await dataBase.get(
-        'SELECT * FROM categories WHERE id = ?',
-        [category_id]
-      )
-
-      if (!checkCategoryExist) {
-        throw new AppError('ID de categoria inválido.', 400)
-      }
-
-      await dataBase.run(
-        'UPDATE dishes SET name=?, description=?, ingredients=?, price=?, category_id=? WHERE id=?',
-        [name, description, ingredients, price, category_id, id]
-      )
+      // Use Knex to update dish
+      await knex('dishes')
+        .where({ id })
+        .update({ name, description, price, ingredients, category_id })
 
       return response
         .status(200)
@@ -89,18 +56,9 @@ class DishesController {
   async delete(request, response) {
     try {
       const { id } = request.params
-      const dataBase = await sqliteConnection()
 
-      const checkDishExist = await dataBase.get(
-        'SELECT * FROM dishes WHERE id = ?',
-        [id]
-      )
-
-      if (!checkDishExist) {
-        throw new AppError('Prato não encontrado.', 404)
-      }
-
-      await dataBase.run('DELETE FROM dishes WHERE id = ?', [id])
+      // Use Knex to delete dish
+      await knex('dishes').where({ id }).del()
 
       return response
         .status(200)
@@ -115,12 +73,9 @@ class DishesController {
   async show(request, response) {
     try {
       const { id } = request.params
-      const dataBase = await sqliteConnection()
 
       if (id) {
-        const dish = await dataBase.get('SELECT * FROM dishes WHERE id = ?', [
-          id
-        ])
+        const dish = await knex('dishes').where({ id }).first()
 
         if (!dish) {
           throw new AppError('Prato não encontrado.', 404)
@@ -128,7 +83,7 @@ class DishesController {
 
         return response.status(200).json(dish)
       } else {
-        const dishes = await dataBase.all('SELECT * FROM dishes')
+        const dishes = await knex('dishes').select()
 
         if (dishes.length === 0) {
           throw new AppError('Nenhum prato encontrado.', 404)

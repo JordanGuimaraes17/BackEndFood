@@ -4,7 +4,7 @@ const knex = require('../database/knex')
 class OrdersController {
   async addDishToOrder(request, response) {
     try {
-      const { dish_id } = request.body
+      const { dish_id, quantity } = request.body
       const user_id = request.user.id
 
       // Obtenha os detalhes do prato por ID
@@ -37,7 +37,7 @@ class OrdersController {
         const [orderId] = await knex('orders').insert({
           user_id,
           dish_id,
-          quantity: 1,
+          quantity,
           dish_price: dishDetails.price,
           total_price: dishDetails.price
         })

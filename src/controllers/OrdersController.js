@@ -1,59 +1,51 @@
 const AppError = require('../utils/AppError')
-const sqliteConnection = require('../database/sqlite')
+const knex = require('../database/knex')
 
 class OrdersController {
   async addDishToOrder(request, response) {
     try {
       const { dish_id } = request.body
       const user_id = request.user.id
-      const database = await sqliteConnection()
 
-      try {
-        // Obtenha os detalhes do prato por ID
-        const dishDetails = await database.get(
-          'SELECT * FROM dishes WHERE id = ?',
-          [dish_id]
-        )
+      // Obtenha os detalhes do prato por ID
+      const dishDetails = await knex('dishes').where({ id: dish_id }).first()
 
-        if (!dishDetails) {
-          return response.status(404).json({ error: 'Prato não encontrado' })
-        }
+      if (!dishDetails) {
+        return response.status(404).json({ error: 'Prato não encontrado' })
+      }
 
-        // Verifique se o prato já está no pedido
-        const existingOrder = await database.get(
-          'SELECT * FROM orders WHERE user_id = ? AND dish_id = ?',
-          [user_id, dish_id]
-        )
+      // Verifique se o prato já está no pedido
+      const existingOrder = await knex('orders')
+        .where({ user_id, dish_id })
+        .first()
 
-        if (existingOrder) {
-          // Se o prato já estiver no pedido, aumente a quantidade e atualize o total
-          const newQuantity = existingOrder.quantity + 1
-          const newTotalPrice = newQuantity * dishDetails.price
+      if (existingOrder) {
+        // Se o prato já estiver no pedido, aumente a quantidade e atualize o total
+        const newQuantity = existingOrder.quantity + 1
+        const newTotalPrice = newQuantity * dishDetails.price
 
-          await database.run(
-            'UPDATE orders SET quantity = ?, total_price = ? WHERE id = ?',
-            [newQuantity, newTotalPrice, existingOrder.id]
-          )
+        await knex('orders')
+          .where({ id: existingOrder.id })
+          .update({ quantity: newQuantity, total_price: newTotalPrice })
 
-          return response.json({
-            success: 'Quantidade do prato no pedido aumentada com sucesso',
-            orderId: existingOrder.id
-          })
-        } else {
-          // Se o prato ainda não estiver no pedido, adicione-o normalmente
-          const { lastID: orderId } = await database.run(
-            'INSERT INTO orders (user_id, dish_id, quantity, dish_price, total_price) VALUES (?, ?, ?, ?, ?)',
-            [user_id, dish_id, 1, dishDetails.price, dishDetails.price]
-          )
+        return response.json({
+          success: 'Quantidade do prato no pedido aumentada com sucesso',
+          orderId: existingOrder.id
+        })
+      } else {
+        // Se o prato ainda não estiver no pedido, adicione-o normalmente
+        const [orderId] = await knex('orders').insert({
+          user_id,
+          dish_id,
+          quantity: 1,
+          dish_price: dishDetails.price,
+          total_price: dishDetails.price
+        })
 
-          return response.status(201).json({
-            success: 'Prato adicionado ao pedido com sucesso',
-            orderId
-          })
-        }
-      } finally {
-        // Feche a conexão com o banco de dados se ela estiver definida
-        database && (await database.close())
+        return response.status(201).json({
+          success: 'Prato adicionado ao pedido com sucesso',
+          orderId
+        })
       }
     } catch (error) {
       console.error(error)
@@ -63,21 +55,22 @@ class OrdersController {
 
   async viewOrder(request, response) {
     const user_id = request.user.id
-    const database = await sqliteConnection()
 
     try {
       // Obtenha os pratos do pedido do usuário
-      const orderDetails = await database.all(
-        'SELECT o.id, o.quantity, o.dish_price, o.total_price, d.name AS dish_name, d.description AS dish_description, d.price AS dish_price FROM orders o LEFT JOIN dishes d ON o.dish_id = d.id WHERE o.user_id = ?',
-        [user_id]
-      )
-
-      // Verifique se orderDetails é um array
-      if (!Array.isArray(orderDetails)) {
-        return response
-          .status(500)
-          .json({ error: 'Erro ao obter detalhes do pedido' })
-      }
+      const orderDetails = await knex('orders')
+        .select(
+          'orders.id',
+          'orders.quantity',
+          'orders.dish_price',
+          'orders.total_price',
+          'dishes.id AS dish_id',
+          'dishes.name AS dish_name',
+          'dishes.description AS dish_description',
+          'dishes.price AS dish_price'
+        )
+        .leftJoin('dishes', 'orders.dish_id', 'dishes.id')
+        .where({ 'orders.user_id': user_id })
 
       if (orderDetails.length === 0) {
         return response.status(404).json({ message: 'Pedido não encontrado' })
@@ -97,15 +90,10 @@ class OrdersController {
     } catch (error) {
       console.error(error)
       return response.status(500).json({ error: 'Erro interno do servidor' })
-    } finally {
-      // Feche a conexão com o banco de dados em todos os casos
-      database && (await database.close())
     }
   }
 
   async removeOrder(req, res) {
-    const database = await sqliteConnection()
-
     try {
       const { dish_id } = req.body
       const user_id = req.user.id
@@ -115,10 +103,9 @@ class OrdersController {
       }
 
       // Verifique se o prato está no pedido
-      const existingOrder = await database.get(
-        'SELECT * FROM orders WHERE user_id = ? AND dish_id = ?',
-        [user_id, dish_id]
-      )
+      const existingOrder = await knex('orders')
+        .where({ user_id, dish_id })
+        .first()
 
       if (!existingOrder) {
         throw new AppError('Prato não encontrado no pedido.')
@@ -129,16 +116,12 @@ class OrdersController {
         const newQuantity = existingOrder.quantity - 1
         const newTotalPrice = newQuantity * existingOrder.dish_price
 
-        await database.run(
-          'UPDATE orders SET quantity = ?, total_price = ? WHERE user_id = ? AND dish_id = ?',
-          [newQuantity, newTotalPrice, user_id, dish_id]
-        )
+        await knex('orders')
+          .where({ user_id, dish_id })
+          .update({ quantity: newQuantity, total_price: newTotalPrice })
       } else {
         // Se a quantidade for 1, remova o prato do pedido
-        await database.run(
-          'DELETE FROM orders WHERE user_id = ? AND dish_id = ?',
-          [user_id, dish_id]
-        )
+        await knex('orders').where({ user_id, dish_id }).del()
       }
 
       return res.json({
@@ -150,9 +133,6 @@ class OrdersController {
         error:
           error.message || 'Erro ao remover uma unidade do prato do pedido.'
       })
-    } finally {
-      // Feche a conexão com o banco de dados em todos os casos
-      database && (await database.close())
     }
   }
 }

@@ -61,9 +61,9 @@ class OrdersController {
       const orderDetails = await knex('orders')
         .select(
           'orders.id',
-          'orders.quantity',
+          'orders.quantity AS order_quantity', // Renomeie para evitar conflito com o campo 'quantity' de dishes
           'orders.dish_price',
-          'orders.total_price',
+          knex.raw('orders.quantity * orders.dish_price AS total_price'), // Calcule o preço total do prato multiplicando a quantidade pelo preço unitário
           'dishes.id AS dish_id',
           'dishes.name AS dish_name',
           'dishes.description AS dish_description',
@@ -76,9 +76,9 @@ class OrdersController {
         return response.status(404).json({ message: 'Pedido não encontrado' })
       }
 
-      // Calcule o total do pedido
+      // Calcule o total do pedido levando em consideração a quantidade de cada prato
       const totalOrderPrice = orderDetails.reduce(
-        (total, dish) => total + dish.total_price,
+        (total, dish) => total + dish.total_price, // Use o total_price diretamente, pois já foi calculado corretamente
         0
       )
 

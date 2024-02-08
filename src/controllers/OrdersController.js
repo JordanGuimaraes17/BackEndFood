@@ -68,7 +68,6 @@ class OrdersController {
           'dishes.name AS dish_name',
           'dishes.description AS dish_description',
           'dishes.price AS dish_price',
-
           'categories.name AS category_name' // Adicione a coluna da categoria do prato
         )
         .leftJoin('dishes', 'orders.dish_id', 'dishes.id')

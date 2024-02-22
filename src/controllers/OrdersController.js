@@ -53,6 +53,48 @@ class OrdersController {
     }
   }
 
+  async updateOrder(req, res) {
+    try {
+      const { dish_id, newQuantity } = req.body
+      const user_id = req.user.id
+
+      if (!dish_id || dish_id.length === 0 || !newQuantity || newQuantity < 0) {
+        throw new AppError('Dados de atualização inválidos.')
+      }
+
+      // Verificar se o prato está no pedido do usuário
+      const existingOrder = await knex('orders')
+        .where({ user_id, dish_id })
+        .first()
+
+      if (!existingOrder) {
+        throw new AppError('Prato não encontrado no pedido.')
+      }
+
+      // Atualizar a quantidade e o preço total do prato no pedido
+      const newTotalPrice = newQuantity * existingOrder.dish_price
+
+      if (newQuantity === 0) {
+        // Se a nova quantidade for zero, remover o prato do pedido
+        await knex('orders').where({ user_id, dish_id }).del()
+      } else {
+        // Atualizar a quantidade e o preço total do prato no pedido
+        await knex('orders')
+          .where({ user_id, dish_id })
+          .update({ quantity: newQuantity, total_price: newTotalPrice })
+      }
+
+      return res.json({
+        message: `Pedido atualizado com sucesso.`
+      })
+    } catch (error) {
+      console.error(error)
+      return res.status(500).json({
+        error: error.message || 'Erro ao atualizar o pedido.'
+      })
+    }
+  }
+
   async viewOrder(request, response) {
     const user_id = request.user.id
 

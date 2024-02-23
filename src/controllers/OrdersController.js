@@ -72,17 +72,16 @@ class OrdersController {
       }
 
       // Atualizar a quantidade e o preço total do prato no pedido
-      const newTotalPrice = newQuantity * existingOrder.dish_price
+      const newTotalPrice =
+        (existingOrder.quantity + newQuantity) * existingOrder.dish_price
 
-      if (newQuantity === 0) {
-        // Se a nova quantidade for zero, remover o prato do pedido
-        await knex('orders').where({ user_id, dish_id }).del()
-      } else {
-        // Atualizar a quantidade e o preço total do prato no pedido
-        await knex('orders')
-          .where({ user_id, dish_id })
-          .update({ quantity: newQuantity, total_price: newTotalPrice })
-      }
+      // Atualizar a quantidade e o preço total do prato no pedido
+      await knex('orders')
+        .where({ user_id, dish_id })
+        .update({
+          quantity: existingOrder.quantity + newQuantity,
+          total_price: newTotalPrice
+        })
 
       return res.json({
         message: `Pedido atualizado com sucesso.`

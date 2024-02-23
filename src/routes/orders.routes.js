@@ -8,7 +8,6 @@ ordersRoutes.use(ensuAuthenticated)
 
 ordersRoutes.post('/', ordersController.addDishToOrder)
 ordersRoutes.put('/:order_id', ordersController.updateOrder)
-
 ordersRoutes.delete('/:order_id', ordersController.removeOrder)
 ordersRoutes.get('/', ordersController.viewOrder)
 

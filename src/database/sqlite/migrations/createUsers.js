@@ -5,7 +5,16 @@ const createUsers = `
       email VARCHAR,
       password VARCHAR,
       avatar VARCHAR NULL,
+      role VARCHAR NOT NULL DEFAULT 'customer', 
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-     )`
+     );
+     CREATE TYPE roles AS ENUM ('admin', 'customer');
+     ALTER TABLE users
+     ALTER COLUMN role TYPE roles
+     USING (role::roles);
+     ALTER TABLE users
+     ADD CONSTRAINT check_role CHECK (role IN ('admin', 'customer'));
+`
+
 module.exports = createUsers

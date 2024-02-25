@@ -9,7 +9,7 @@ const createUsers = `
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
      );
-     CREATE TYPE roles AS ENUM ('admin', 'customer');
+     CREATE TYPE roles AS ENUM ('admin', 'customer','sales');
      ALTER TABLE users
      ALTER COLUMN role TYPE roles
      USING (role::roles);

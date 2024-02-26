@@ -15,12 +15,12 @@ dishesRoutes.use(ensuAuthenticated)
 dishesRoutes.post(
   '/',
   upload.single('image'),
-  verifyUserAuthorization(['admin']),
+
   dishesController.create
 )
 dishesRoutes.put(
   '/:id',
-  verifyUserAuthorization(['admin']),
+
   dishesController.update
 )
 dishesRoutes.delete(

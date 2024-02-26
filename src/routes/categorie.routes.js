@@ -6,11 +6,22 @@ const ensuAuthenticated = require('../middlewares/ensuAuthenticated')
 const verifyUserAuthorization = require('../middlewares/verifyUserAuthorization')
 
 categoriesRoutes.use(ensuAuthenticated)
-categoriesRoutes.use(verifyUserAuthorization(['admin']))
 
-categoriesRoutes.post('/', categoriesController.create)
-categoriesRoutes.put('/:id', categoriesController.update)
+categoriesRoutes.post(
+  '/',
+  verifyUserAuthorization(['admin']),
+  categoriesController.create
+)
+categoriesRoutes.put(
+  '/:id',
+  verifyUserAuthorization(['admin']),
+  categoriesController.update
+)
 categoriesRoutes.get('/', categoriesController.index)
-categoriesRoutes.delete('/:id', categoriesController.delete)
+categoriesRoutes.delete(
+  '/:id',
+  verifyUserAuthorization(['admin']),
+  categoriesController.delete
+)
 
 module.exports = categoriesRoutes

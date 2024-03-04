@@ -11,7 +11,7 @@ app.use(cookieParser())
 migrationsRun()
 app.use(
   cors({
-    origin: ['https://backendfood-7068.onrender.com', 'http://127.0.0.1:5173/'],
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173/'],
     credentials: true
   })
 )
